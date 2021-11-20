@@ -13,6 +13,11 @@ import model.SHIP;
 import model.SmallInfoLabel;
 import javafx.scene.media.AudioClip;
 
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.Random;
 
 public class GameViewManager {
@@ -57,6 +62,10 @@ public class GameViewManager {
 
     private final static String SHIP_COLLIDED_WITH_STAR = "file:src/main/resources/ship_collided_with_star.mp3";
 
+    private final static String LASER = "file:src/main/resources/laserBlue01.png";
+    private ImageView[] laser;
+    int counter;
+
     public GameViewManager() {
         initializeStage();
         createKeyListeners();
@@ -74,7 +83,6 @@ public class GameViewManager {
                 } else if (event.getCode() == KeyCode.SPACE) {
                     isSpaceKeyPressed = true;
                 }
-                ;
             }
         });
 
@@ -141,6 +149,14 @@ public class GameViewManager {
             setNewElementsPosition(greyMeteors[i]);
             gamePane.getChildren().add(greyMeteors[i]);
         }
+
+        laser = new ImageView[10];
+        for (int i = 0; i < laser.length; i++) {
+            laser[i] = new ImageView(LASER);
+            laser[i].setLayoutY(ship.getLayoutY() + 100);
+            laser[i].setLayoutX(ship.getLayoutX() + 1200);
+            gamePane.getChildren().add(laser[i]);
+        }
     }
 
     private void moveGameElements() {
@@ -154,6 +170,9 @@ public class GameViewManager {
         for (int i = 0; i < greyMeteors.length; i++) {
             greyMeteors[i].setLayoutY(greyMeteors[i].getLayoutY() + 7);
             greyMeteors[i].setRotate(greyMeteors[i].getRotate() + 4);
+        }
+        for (int i = 0; i < laser.length; i++) {
+            laser[i].setLayoutY(laser[i].getLayoutY() - 15);
         }
     }
 
@@ -173,13 +192,18 @@ public class GameViewManager {
                 setNewElementsPosition(greyMeteors[i]);
             }
         }
+        for (int i = 0; i < laser.length; i++) {
+            if (laser[i].getLayoutY() < -900) {
+                laser[i].setLayoutY(ship.getLayoutY() + 100);
+                laser[i].setLayoutX(ship.getLayoutX() + 1200);
+            }
+        }
     }
 
     private void setNewElementsPosition(ImageView image) {
         image.setLayoutX(randomPositionGenerator.nextInt(370));
         image.setLayoutY(-(randomPositionGenerator.nextInt(3200) + 600));
     }
-
 
     private void createShip(SHIP choosenShip) {
         ship = new ImageView(choosenShip.getUrl());
@@ -196,6 +220,7 @@ public class GameViewManager {
                 moveGameElements();
                 checkElementsAreBehindTheShipAndRelocate();
                 checkIfElementsCollide();
+                shootLaser();
                 moveShip();
             }
         };
@@ -240,7 +265,6 @@ public class GameViewManager {
             }
         ship.setRotate(angle);
         {
-
         }
 
     }
@@ -319,6 +343,25 @@ public class GameViewManager {
     private void soundOfShipCollidedWithStar(String sound) {
         AudioClip sounds = new AudioClip(sound);
         sounds.play();
+    }
+
+    private void shootLaser() {
+        Date time = new Date();
+        double beforeClickSpace = time.getTime();
+
+        if (isSpaceKeyPressed) {
+            double afterClickSpace = time.getTime();
+            isSpaceKeyPressed = false;
+
+            if (afterClickSpace - beforeClickSpace < 0.01) {
+                laser[counter].setLayoutY(ship.getLayoutY() - 40);
+                laser[counter].setLayoutX(ship.getLayoutX() + 45);
+                    counter++;
+                if (counter >= laser.length) {
+                    counter = 0;
+                }
+            }
+        }
     }
 
 }

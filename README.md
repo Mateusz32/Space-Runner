@@ -1,7 +1,7 @@
 # Space-Runner
 JavaFX - game
 ## Welcome to the Space Runner by Mateusz Rudkiewicz
-![This is an image](https://prnt.sc/21asfhd.png)
+![This is an image](https://prnt.sc/21asfhd)
 ## Check game instruciotn by clicking help button.
 
 ## Select play button from the main menu, then choose Your ship and click start.

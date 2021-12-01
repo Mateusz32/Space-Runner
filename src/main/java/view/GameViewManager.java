@@ -1,22 +1,23 @@
 package view;
 
+import buttons.SpaceRunnerButton;
+import lable.EnterNamePlayerLabel;
+import lable.SmallInfoLabel;
 import javafx.animation.AnimationTimer;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import model.SHIP;
-import model.SmallInfoLabel;
+import model.*;
 import javafx.scene.media.AudioClip;
+import textField.NameField;
 
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 
@@ -47,7 +48,7 @@ public class GameViewManager {
 
     private ImageView[] brownMeteors;
     private ImageView[] greyMeteors;
-    Random randomPositionGenerator;
+    private Random randomPositionGenerator;
 
     private ImageView star;
     private SmallInfoLabel pointsLabel;
@@ -59,12 +60,17 @@ public class GameViewManager {
     private final static int STAR_RADIUS = 12;
     private final static int SHIP_RADIUS = 27;
     private final static int METEOR_RADIUS = 20;
-
-    private final static String SHIP_COLLIDED_WITH_STAR = "file:src/main/resources/ship_collided_with_star.mp3";
+    private final static int LASER_RADIUS = 12;
 
     private final static String LASER = "file:src/main/resources/laserBlue01.png";
     private ImageView[] laser;
-    int counter;
+    private int counter;
+    private Player player;
+    private NameField namePlayer;
+
+    private Date startGame = new Date();
+
+    private int speedOfMeteors = 7;
 
     public GameViewManager() {
         initializeStage();
@@ -153,8 +159,8 @@ public class GameViewManager {
         laser = new ImageView[10];
         for (int i = 0; i < laser.length; i++) {
             laser[i] = new ImageView(LASER);
-            laser[i].setLayoutY(ship.getLayoutY() + 100);
-            laser[i].setLayoutX(ship.getLayoutX() + 1200);
+            setNewElementsPosition(laser[i]);
+            setNewElementsPosition(laser[i]);
             gamePane.getChildren().add(laser[i]);
         }
     }
@@ -163,14 +169,16 @@ public class GameViewManager {
         star.setLayoutY(star.getLayoutY() + 5);
 
         for (int i = 0; i < brownMeteors.length; i++) {
-            brownMeteors[i].setLayoutY(brownMeteors[i].getLayoutY() + 7);
+            brownMeteors[i].setLayoutY(brownMeteors[i].getLayoutY() + increaseSpeedOfMeteors());
             brownMeteors[i].setRotate(brownMeteors[i].getRotate() + 4);
         }
 
         for (int i = 0; i < greyMeteors.length; i++) {
-            greyMeteors[i].setLayoutY(greyMeteors[i].getLayoutY() + 7);
+            greyMeteors[i].setLayoutY(greyMeteors[i].getLayoutY() + increaseSpeedOfMeteors());
             greyMeteors[i].setRotate(greyMeteors[i].getRotate() + 4);
         }
+
+
         for (int i = 0; i < laser.length; i++) {
             laser[i].setLayoutY(laser[i].getLayoutY() - 15);
         }
@@ -302,19 +310,15 @@ public class GameViewManager {
     private void checkIfElementsCollide() {
         if (SHIP_RADIUS + STAR_RADIUS > calculateDistance(ship.getLayoutX() + 49, star.getLayoutX() + 15, ship.getLayoutY() + 37, star.getLayoutY() + 15)) {
             setNewElementsPosition(star);
-            soundOfShipCollidedWithStar(SHIP_COLLIDED_WITH_STAR);
-            points++;
-            String textToSet = "POINTS : ";
-            if (points < 10) {
-                textToSet = textToSet + "0";
-            }
-            pointsLabel.setText(textToSet + points);
+            createSound(SOUNDS.SHIP_COLLIDED_WITH_STAR_SOUND);
+            addPoints();
         }
 
         for (int i = 0; i < brownMeteors.length; i++) {
             if (METEOR_RADIUS + SHIP_RADIUS > calculateDistance(ship.getLayoutX() + 49, brownMeteors[i].getLayoutX() + 20, ship.getLayoutY() + 37, brownMeteors[i].getLayoutY() + 20)) {
                 removeLife();
                 setNewElementsPosition(brownMeteors[i]);
+                createSound(SOUNDS.METEOR_COLLIDE_WITH_SHIP_SOUND);
             }
         }
 
@@ -322,6 +326,33 @@ public class GameViewManager {
             if (METEOR_RADIUS + SHIP_RADIUS > calculateDistance(ship.getLayoutX() + 49, greyMeteors[i].getLayoutX() + 20, ship.getLayoutY() + 37, greyMeteors[i].getLayoutY() + 20)) {
                 removeLife();
                 setNewElementsPosition(greyMeteors[i]);
+                createSound(SOUNDS.METEOR_COLLIDE_WITH_SHIP_SOUND);
+            }
+        }
+
+        for (int i = 0; i < laser.length; i++) {
+            int counter = 0;
+            while (counter < brownMeteors.length) {
+                if (METEOR_RADIUS + LASER_RADIUS > calculateDistance(laser[i].getLayoutX() + 5, brownMeteors[counter].getLayoutX() + 20,
+                        laser[i].getLayoutY() + 5, brownMeteors[counter].getLayoutY() + 20)) {
+                    setNewElementsPosition(brownMeteors[counter]);
+                    setNewElementsPosition(laser[i]);
+                    addPoints();
+                }
+                counter++;
+            }
+        }
+
+        for (int i = 0; i < laser.length; i++) {
+            int counter = 0;
+            while (counter < greyMeteors.length) {
+                if (METEOR_RADIUS + LASER_RADIUS > calculateDistance(laser[i].getLayoutX() + 5, greyMeteors[counter].getLayoutX() + 20,
+                        laser[i].getLayoutY() + 5, greyMeteors[counter].getLayoutY() + 20)) {
+                    setNewElementsPosition(greyMeteors[counter]);
+                    setNewElementsPosition(laser[i]);
+                    addPoints();
+                }
+                counter++;
             }
         }
     }
@@ -330,9 +361,10 @@ public class GameViewManager {
         gamePane.getChildren().remove(playerLifes[playerLife]);
         playerLife--;
         if (playerLife < 0) {
-            gameStage.close();
             gameTimer.stop();
-            menuStage.show();
+            createEnterNamePlayerLable();
+            createNamePlayerTextFiled();
+            createButtonBack();
         }
     }
 
@@ -340,8 +372,8 @@ public class GameViewManager {
         return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
     }
 
-    private void soundOfShipCollidedWithStar(String sound) {
-        AudioClip sounds = new AudioClip(sound);
+    private void createSound(SOUNDS sound) {
+        AudioClip sounds = new AudioClip(sound.getSound());
         sounds.play();
     }
 
@@ -350,18 +382,86 @@ public class GameViewManager {
         double beforeClickSpace = time.getTime();
 
         if (isSpaceKeyPressed) {
+            createSound(SOUNDS.SHOOT_LASER_SOUND);
             double afterClickSpace = time.getTime();
             isSpaceKeyPressed = false;
 
             if (afterClickSpace - beforeClickSpace < 0.01) {
                 laser[counter].setLayoutY(ship.getLayoutY() - 40);
                 laser[counter].setLayoutX(ship.getLayoutX() + 45);
-                    counter++;
+                counter++;
                 if (counter >= laser.length) {
                     counter = 0;
                 }
             }
         }
+    }
+
+    private void addPoints() {
+        points++;
+        String textToSet = "POINTS : ";
+        if (points < 10) {
+            textToSet = textToSet + "0";
+        }
+        pointsLabel.setText(textToSet + points);
+    }
+
+    private void createNamePlayerTextFiled() {
+        namePlayer = new NameField();
+        namePlayer.setCursor(Cursor.TEXT);
+        namePlayer.setLayoutX(130);
+        namePlayer.setLayoutY(300);
+        gamePane.getChildren().add(namePlayer);
+    }
+
+    private SpaceRunnerButton createButtonBack() {
+        SpaceRunnerButton backButton = new SpaceRunnerButton("BACK");
+        backButton.setLayoutX(200);
+        backButton.setLayoutY(500);
+        gamePane.getChildren().add(backButton);
+
+        backButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                if (!namePlayer.getText().isBlank() && namePlayer.getText().length() <= 5) {
+                    createNewPlayerAndSaveToTheListOfRanking();
+                    gameStage.close();
+                    menuStage.show();
+                } else {
+                    Label info = new Label("Set correctly Your name (max 5 characters)");
+                    info.setLayoutX(180);
+                    info.setLayoutY(350);
+                    gamePane.getChildren().add(info);
+                }
+            }
+        });
+
+        return backButton;
+    }
+
+    private void createEnterNamePlayerLable() {
+        EnterNamePlayerLabel namePlayer = new EnterNamePlayerLabel("Enter your name: ");
+        namePlayer.setLayoutX(85);
+        namePlayer.setLayoutY(100);
+        gamePane.getChildren().add(namePlayer);
+    }
+
+    private void createNewPlayerAndSaveToTheListOfRanking() {
+        player = new Player();
+        player.setName(namePlayer.getText());
+        player.setPoints(points);
+        RankigOfPlayers ranking = new RankigOfPlayers();
+        ranking.savePlayerIntoRanking(player);
+    }
+
+    private int increaseSpeedOfMeteors() {
+        Date currentTime = new Date();
+
+        if (currentTime.getTime() - startGame.getTime() > 10000) {
+            speedOfMeteors = speedOfMeteors + 2;
+            startGame = currentTime;
+        }
+        return speedOfMeteors;
     }
 
 }

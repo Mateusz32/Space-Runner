@@ -1,5 +1,9 @@
 package view;
 
+import buttons.SpaceRunnerButton;
+import lable.InfoLable;
+import lable.RankingLabel;
+import lable.TextInfoButtonLabel;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -32,10 +36,13 @@ public class ViewManager {
 
     private SpaceRunnerSubScene sceneToHide;
 
-    List<SpaceRunnerButton> menuButtons;
+    private List<SpaceRunnerButton> menuButtons;
 
-    List<ShipPicker> shipList;
+    private List<ShipPicker> shipList;
     private SHIP choosenShip;
+
+    private TextInfoButtonLabel textInfoButtonLabel;
+    private String text;
 
     public ViewManager() {
         menuButtons = new ArrayList<>();
@@ -57,7 +64,6 @@ public class ViewManager {
         sceneToHide = subScene;
     }
 
-
     private void createSubScene() {
         creditsSubScene = new SpaceRunnerSubScene();
         mainPane.getChildren().add(creditsSubScene);
@@ -65,9 +71,7 @@ public class ViewManager {
         helpSubScene = new SpaceRunnerSubScene();
         mainPane.getChildren().add(helpSubScene);
 
-        scoresSubScene = new SpaceRunnerSubScene();
-        mainPane.getChildren().add(scoresSubScene);
-
+        createScoreSubScene();
         createShipChooserSubScene();
     }
 
@@ -81,8 +85,11 @@ public class ViewManager {
         shipChoserSubScene.getPane().getChildren().add(choosenShipLable);
         shipChoserSubScene.getPane().getChildren().add(createShipToChoosen());
         shipChoserSubScene.getPane().getChildren().add(createButtonToStart());
+    }
 
-
+    private void createScoreSubScene() {
+        scoresSubScene = new SpaceRunnerSubScene();
+        mainPane.getChildren().add(scoresSubScene);
     }
 
     private HBox createShipToChoosen() {
@@ -118,9 +125,9 @@ public class ViewManager {
         startButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                if(choosenShip != null){
+                if (choosenShip != null) {
                     GameViewManager gameManager = new GameViewManager();
-                    gameManager.createNewGame(mainStage,choosenShip);
+                    gameManager.createNewGame(mainStage, choosenShip);
                 }
             }
         });
@@ -166,6 +173,12 @@ public class ViewManager {
         scoresButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                scoresSubScene.getPane().getChildren().clear();
+                InfoLable rankingTop5PlayersLabel = new InfoLable("RANKING TOP 5 PLAYERS");
+                rankingTop5PlayersLabel.setLayoutX(110);
+                rankingTop5PlayersLabel.setLayoutY(25);
+                scoresSubScene.getPane().getChildren().add(rankingTop5PlayersLabel);
+                scoresSubScene.getPane().getChildren().add(displayRanking());
                 showSubScene(scoresSubScene);
             }
         });
@@ -178,6 +191,24 @@ public class ViewManager {
         helpButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                text = "Control:\n" +
+                        "\n" +
+                        "Arrow right - move ship to the right\n" +
+                        "\n" +
+                        "Arrow left - move ship to the left\n" +
+                        "\n" +
+                        "Space - laser shooting\n" +
+                        "\n" +
+                        "Star - get star one point\n" +
+                        "\n" +
+                        "Meteor - shoot meteor get one point\n" +
+                        "\n" +
+                        "\n" +
+                        "Orginal game by Javacraving - youtube\n" +
+                        "Game modified by Mateusz Rudkiewicz";
+
+                textInfoButtonLabel = new TextInfoButtonLabel(text);
+                helpSubScene.getPane().getChildren().add(textInfoButtonLabel);
                 showSubScene(helpSubScene);
             }
         });
@@ -190,6 +221,22 @@ public class ViewManager {
         creditsButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                text = "You are a space delivery man. Your \n" +
+                        "\n" +
+                        "mission is to carry pachangers through\n" +
+                        "\n" +
+                        "asteroids. It's a dangerous mission.\n" +
+                        "\n" +
+                        "Be aware of asteroids. Collect stars\n" +
+                        "\n" +
+                        "and shoot meteors to get points.\n" +
+                        "\n" +
+                        "Time by time the game become harder.\n" +
+                        "\n" +
+                        "Good luck spacer runner.";
+
+                textInfoButtonLabel = new TextInfoButtonLabel(text);
+                creditsSubScene.getPane().getChildren().add(textInfoButtonLabel);
                 showSubScene(creditsSubScene);
             }
         });
@@ -207,7 +254,6 @@ public class ViewManager {
             }
         });
     }
-
 
     private void createBackground() {
         Image backgroundImage = new Image("file:src/main/resources/blue.png", 256, 256, false, true);
@@ -235,5 +281,22 @@ public class ViewManager {
         });
 
         mainPane.getChildren().add(logo);
+    }
+
+    private VBox displayRanking() {
+        VBox box = new VBox();
+        box.setSpacing(5);
+        RankigOfPlayers ranking = new RankigOfPlayers();
+        List<Player> listOfFiveBestPlayer = ranking.getFiveBestPlayer();
+        RankingLabel label;
+
+        for (int i = 0; i < listOfFiveBestPlayer.size(); i++) {
+            label = new RankingLabel(i + 1 + ". " + listOfFiveBestPlayer.get(i).getName() + "   " + listOfFiveBestPlayer.get(i).getPoints());
+            box.getChildren().add(label);
+        }
+
+        box.setLayoutX(120);
+        box.setLayoutY(100);
+        return box;
     }
 }
